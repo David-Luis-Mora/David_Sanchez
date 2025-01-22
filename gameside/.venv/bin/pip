@@ -1,4 +1,4 @@
-#!/home/alu/Escritorio/gameside/.venv/bin/python
+#!/home/alu/Escritorio/ProyectoGithub/gameside/.venv/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys
