@@ -40,6 +40,6 @@ class Review(models.Model):
     comment = models.TextField()
     rating = models.SmallIntegerField()
     game = models.ForeignKey('games.Game', related_name='reviews', on_delete=models.CASCADE)
-    user = models.ForeignKey(
+    author = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reviews'
     )
