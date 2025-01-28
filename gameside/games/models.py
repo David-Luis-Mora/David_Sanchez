@@ -17,7 +17,7 @@ class Game(models.Model):
     title = models.CharField(max_length=255, unique=True)
     slug = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True)
-    cover = models.ImageField(blank=True)
+    cover = models.ImageField(blank=True, default='covers/default.jpg')
     price = models.DecimalField(max_digits=5, decimal_places=2)
     stock = models.PositiveSmallIntegerField()
     released_at = models.DateField()
@@ -28,8 +28,8 @@ class Game(models.Model):
     category = models.ForeignKey(
         'categories.Category',
         related_name='games',
-        on_delete=models.CASCADE,
-        blank=True,
+        on_delete=models.SET_NULL,
+        null=True,
     )
     platforms = models.ManyToManyField(
         'platforms.Platform',

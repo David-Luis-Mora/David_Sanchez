@@ -1,3 +1,3 @@
 # from . import views
 
-app_name = 'games'
+# app_name = 'games'
