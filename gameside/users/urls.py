@@ -5,4 +5,6 @@ from . import views
 app_name = 'users'
 
 
-urlpattens = [path('', views.auth, name='auth')]
+urlpatterns = [
+    path('', views.auth, name='auth'),
+]
