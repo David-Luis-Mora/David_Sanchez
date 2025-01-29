@@ -36,6 +36,12 @@ class Game(models.Model):
         related_name='games',
     )
 
+    # def get_category(self):
+    #     category_all = []
+    #     for category in self.category.all:  
+    #         category_all.append(category)
+    #     return category_all
+
 
 class Review(models.Model):
     comment = models.TextField()
