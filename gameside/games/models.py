@@ -18,7 +18,7 @@ class Game(models.Model):
     slug = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True)
     cover = models.ImageField(blank=True, default='covers/default.jpg')
-    price = models.DecimalField(max_digits=5, decimal_places=2)
+    price = models.FloatField()
     stock = models.PositiveSmallIntegerField()
     released_at = models.DateField()
     pegi = models.IntegerField(
@@ -36,13 +36,6 @@ class Game(models.Model):
         related_name='games',
     )
 
-    # def get_category(self):
-    #     category_all = []
-    #     for category in self.category.all:  
-    #         category_all.append(category)
-    #     return category_all
-
-
 class Review(models.Model):
     comment = models.TextField()
     rating = models.PositiveSmallIntegerField(
@@ -52,5 +45,5 @@ class Review(models.Model):
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reviews'
     )
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at= models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
