@@ -34,7 +34,10 @@ class GamesSerializer(BaseSerializer):
                 for platform in instance.platforms.all()
             ],
 
-        }   
+        }
+
+    def serialize_queryset(self, queryset) -> list:
+        return [self.serialize_instance(game) for game in queryset]
 
 
 

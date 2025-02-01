@@ -7,7 +7,7 @@ class OrdersSerializer(BaseSerializer):
 
     def serialize_instance(self, instance) -> dict:
 
-        total_price = sum(game.price for game in instance.games.all())
+        price = sum(game.price for game in instance.games.all())
         return {
             'id': instance.pk,
             'status': instance.get_status_display(),
@@ -53,5 +53,5 @@ class OrdersSerializer(BaseSerializer):
                 'first_name': instance.user.first_name,
                 'last_name': instance.user.last_name,
             },
-            'total_price': total_price
+            'price': price
         }
