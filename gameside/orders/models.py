@@ -15,7 +15,7 @@ class Order(models.Model):
     status = models.SmallIntegerField(choices=Status, default=Status.INITIATED)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    key = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    key = models.UUIDField(default=uuid.uuid4, unique=True)
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='orders'
     )
