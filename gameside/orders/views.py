@@ -64,7 +64,13 @@ def order_detail(request,pk):
         except Token.DoesNotExist:
             return JsonResponse({'error': 'Invalid token'}, status=401)
 
-        order = Order.objects.get(pk=pk)
+        try:
+            order = Order.objects.get(pk=pk)
+        except Order.DoesNotExist:
+            return JsonResponse({'error': 'Order not found'}, status=404)
+
+        if order.user != token.user:
+            return JsonResponse({'error': 'User is not the owner of requested order'}, status=403)
         serializer = OrdersSerializer(order)
         serialized_data = serializer.serialize_instance(order)
 
@@ -102,7 +108,7 @@ def order_game_list(request,pk):
             return JsonResponse({'error': 'Order not found'}, status=404)
 
         if order.user != token.user:
-            return JsonResponse({'error': 'User  is not the owner of requested order'}, status=403)
+            return JsonResponse({'error': 'User is not the owner of requested order'}, status=403)
 
         games = order.games.all()
         serializer = GamesSerializer(games)
@@ -118,12 +124,86 @@ def order_game_list(request,pk):
     
 
 
-def add_game_to_order(request):
-    pass
+def add_game_to_order(request,pk,slug):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    try:
+        data = json.loads(request.body)
+        token_key = data.get('token')
+        if  not token_key:
+            return JsonResponse({'error': 'Missing required fields'}, status=400)
+        
+        try:
+            token = Token.objects.get(key=token_key)
+        except Token.DoesNotExist:
+            return JsonResponse({'error': 'Invalid token'}, status=401)
+        
+        try:
+            order = Order.objects.get(pk=pk)
+        except Order.DoesNotExist:
+            return JsonResponse({'error': 'Order not found'}, status = 404)
+        
+        try:
+            game = Game.objects.get(slug=slug)
+        except Game.DoesNotExist:
+            return JsonResponse({'error': 'Game not found'}, status = 404)
+
+        if order.user != token.user:
+            return JsonResponse({'error': 'User is not the owner of requested order'}, status=403)
+
+        
+        
+        if game.stock <= 0:
+            return JsonResponse({'error': 'Game out of stock'})
+        
+        order.games.add(game)
+        game.stock -= 1
+        game.save()
+
+        return JsonResponse({'num-games-in-order': order.games.count()},status=200)
+
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON body'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 
-def confirm_order(request):
-    pass
+
+
+def confirm_order(request, pk):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    try:
+        data = json.loads(request.body)
+        token_key = data.get('token')
+
+        if not token_key:
+            return JsonResponse({'error': 'Missing required fields'},status=400)
+
+        try:
+            token = Token.objects.get(key = token_key)
+        except Token.DoesNotExist:
+            return JsonResponse({'error': 'Invalid token'},status=401)
+        
+
+        try:
+            order = Order.objects.get(pk=pk)
+        except Order.DoesNotExist:
+            return JsonResponse({'error': 'Order not found'}, status=404)
+        
+        if order.user != token.user:
+            return JsonResponse({'error': 'User is not the owner of requested order'}, status=403)
+        
+        if order.status != 1:
+            return JsonResponse({'error': 'Orders can only be confirmed when initiated'}, status=400)
+
+        order.status = Order.Status.CONFIRMED
+        order.save()
+
+        return JsonResponse({'status': order.get_status_display()})
+    
+    except json.JSONDecodeError:
+        return JsonResponse({'error':'Invalid JSON body'}, status=400)
 
 
 def cancel_order(request):
