@@ -206,7 +206,39 @@ def confirm_order(request, pk):
         return JsonResponse({'error':'Invalid JSON body'}, status=400)
 
 
-def cancel_order(request):
+def cancel_order(request,pk):
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'},status=405)
+    try:
+        data = json.loads(request.body)
+        token_key = data.get('token')
+        if not token_key:
+            return JsonResponse({'error': 'Missing required fields'}, status=400)
+        
+        try:
+            token = Token.objects.get(key=token_key)
+        except Token.DoesNotExist:
+            return JsonResponse({'error': 'Invalid token'}, status=401)
+        
+
+        try: 
+            order = Order.objects.get(pk=pk)
+        except Order.DoesNotExist:
+            return JsonResponse({'error': 'Order not found'}, status=404)
+        
+        if  order.user != token.user:
+            return JsonResponse({'error': 'User is not the owner of requested order'}, status=403)
+        
+        if order.status != 1:
+            return JsonResponse({'error': 'Orders can only be cancelled when initiated'}, status=400)
+        
+        order.status = Order.Status.CANCELLED
+        order.save()
+
+        return JsonResponse({'status': order.get_status_display()}, status=200)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON body'}, status=400)
     pass
 
 
