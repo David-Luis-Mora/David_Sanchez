@@ -242,5 +242,58 @@ def cancel_order(request,pk):
     pass
 
 
-def pay_order(request):
-    pass
+def pay_order(request, pk):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'},status=405)
+    try:
+        data = json.loads(request.body)
+        token_key = data.get('token')
+        card_number = data.get('card-number')
+        exp_date = data.get('exp-date')
+        cvc = data.get('cvc')
+
+        if not token_key or not card_number or not exp_date or not cvc  :
+            return JsonResponse({'error': 'Missing required fields'}, status=400)
+        
+        verf_card = card_number.split('-')
+        count = 0
+        for j in verf_card:
+            if len(j) == 4:
+                count += 1
+        if len(verf_card) != 4 or count != 4:
+            return JsonResponse({'error': 'Invalid card number'}, status=400)
+
+        verf_exp_date = exp_date.split('/')
+        if int(verf_exp_date[1][0]) >3:
+            return JsonResponse({'error': 'Invalid expiration date'},status=400)
+        
+        if int(verf_exp_date[1]) < 2024:
+            return JsonResponse({'error': 'Card expired'},status=400)
+         
+        if len(cvc) != 3:
+            return JsonResponse({'error': 'Invalid CVC'}, status=400)
+        
+
+        try:
+            token = Token.objects.get(key=token_key)
+        except Token.DoesNotExist:
+            return JsonResponse({'error': 'Invalid token'}, status=401)
+        
+        try:
+            order = Order.objects.get(pk=pk)
+        except Order.DoesNotExist:
+            return JsonResponse({'error': 'Order not found'}, status=404)
+        
+        if order.user != token.user:
+            return JsonResponse({'error': 'User is not the owner of requested order'},status=403)
+        
+        if order.status != 2:
+            return JsonResponse({'error': 'Orders can only be payed when confirmed'}, status=400)
+        
+        order.status = Order.Status.PAID
+        order.save()
+        
+        return JsonResponse({'status': order.get_status_display(), 'key': order.key}, status=200)
+    
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON body'},status=400)
