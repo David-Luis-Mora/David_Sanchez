@@ -52,6 +52,7 @@ class OrdersSerializer(BaseSerializer):
                 'email': instance.user.email,
                 'first_name': instance.user.first_name,
                 'last_name': instance.user.last_name,
+                'email': instance.user.email
             },
             'price': price
         }

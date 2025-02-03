@@ -8,7 +8,14 @@ class TokensSerializer(BaseSerializer):
     def serialize_instance(self, instance) -> dict:
         return {
             'id': instance.pk,
-            #'user': instance.user,
+            'user': {
+                'id': instance.user.id,
+                'username': instance.user.username,
+                'email': instance.user.email,
+                'first_name': instance.user.first_name,
+                'last_name': instance.user.last_name,
+                'email': instance.user.email
+            },
             'key': instance.key,
             'created_at': instance.created_at,
         }

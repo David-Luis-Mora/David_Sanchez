@@ -233,6 +233,9 @@ def cancel_order(request,pk):
         if order.status != 1:
             return JsonResponse({'error': 'Orders can only be cancelled when initiated'}, status=400)
         
+        for game in order.games.all():
+            game.stock += 1
+            game.save()
         order.status = Order.Status.CANCELLED
         order.save()
 
