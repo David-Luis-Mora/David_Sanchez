@@ -68,6 +68,7 @@ def add_review(request, slug):
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
     try:
+        patron = 'Bearer \d{8}[A-Z]'
         data = json.loads(request.body.decode('utf-8'))
         token_key = data.get('token')
         rating = data.get('rating')
@@ -78,11 +79,15 @@ def add_review(request, slug):
 
         if len(data) and not token_key and  not rating and not comment :
             return JsonResponse({'error': 'Invalid JSON body'}, status=400)
+        
+        if not token_key:
+            return JsonResponse({'error': 'Missing required fields'}, status=400)
+
 
         
 
         if not token_key or rating is None or comment is None:
-            return JsonResponse({'error': 'Missing required fields'}, status=400)
+            return JsonResponse({'error': 'Invalid authentication token'}, status=400)
 
         try:
             token = Token.objects.get(key=token_key)

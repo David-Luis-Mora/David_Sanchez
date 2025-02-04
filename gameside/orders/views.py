@@ -1,4 +1,4 @@
-# Create your views here.
+import re
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404
 import json
@@ -26,7 +26,7 @@ def add_order(request):
         data = json.loads(request.body)
         token_key = data.get('token')
         if not token_key:
-            return JsonResponse({'error': 'Missing required fields'}, status=400)
+            return JsonResponse({'error': 'Invalid authentication token'}, status=400)
 
         try:
             token = Token.objects.get(key=token_key)
@@ -44,7 +44,7 @@ def add_order(request):
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON body'}, status=400)
     except Exception as e:
-        logger.error(f"Error creating order: {str(e)}")  # Log the error
+        logger.error(f"Error creating order: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)
 
 
@@ -57,7 +57,7 @@ def order_detail(request,pk):
         data = json.loads(request.body)
         token_key = data.get('token')
         if not token_key:
-            return JsonResponse({'error': 'Missing required fields'}, status=400)
+            return JsonResponse({'error': 'Invalid authentication token'}, status=400)
 
         try:
             token = Token.objects.get(key=token_key)
@@ -94,7 +94,7 @@ def order_game_list(request,pk):
 
         token_key = data.get('token')
         if not token_key:
-            return JsonResponse({'error': 'Missing required fields'}, status=400)
+            return JsonResponse({'error': 'Invalid authentication token'}, status=400)
 
         try:
             token = Token.objects.get(key=token_key)
@@ -131,7 +131,7 @@ def add_game_to_order(request,pk,slug):
         data = json.loads(request.body)
         token_key = data.get('token')
         if  not token_key:
-            return JsonResponse({'error': 'Missing required fields'}, status=400)
+            return JsonResponse({'error': 'Invalid authentication token'}, status=400)
         
         try:
             token = Token.objects.get(key=token_key)
@@ -171,14 +171,18 @@ def add_game_to_order(request,pk,slug):
 
 
 def confirm_order(request, pk):
+    patron = 'Bearer \d{8}[A-Z]'
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     try:
-        data = json.loads(request.body)
-        token_key = data.get('token')
+        token_key = json.loads(request.headers.get('Authorization'))
+        # token_key = data.get('Authorization')
+
+        # if token_key := re.search(patron,token_key):
+        #     return JsonResponse({'error': 'Invalid authentication token'},status=400)
 
         if not token_key:
-            return JsonResponse({'error': 'Missing required fields'},status=400)
+            return JsonResponse({'error': 'Invalid authentication token'},status=400)
 
         try:
             token = Token.objects.get(key = token_key)
@@ -203,7 +207,7 @@ def confirm_order(request, pk):
         return JsonResponse({'status': order.get_status_display()})
     
     except json.JSONDecodeError:
-        return JsonResponse({'error':'Invalid JSON body'}, status=400)
+        return JsonResponse({'error':'Invalid authentication token'}, status=400)
 
 
 def cancel_order(request,pk):
@@ -214,7 +218,7 @@ def cancel_order(request,pk):
         data = json.loads(request.body)
         token_key = data.get('token')
         if not token_key:
-            return JsonResponse({'error': 'Missing required fields'}, status=400)
+            return JsonResponse({'error': 'Invalid authentication token'}, status=400)
         
         try:
             token = Token.objects.get(key=token_key)
@@ -256,7 +260,7 @@ def pay_order(request, pk):
         cvc = data.get('cvc')
 
         if not token_key or not card_number or not exp_date or not cvc  :
-            return JsonResponse({'error': 'Missing required fields'}, status=400)
+            return JsonResponse({'error': 'Invalid authentication token'}, status=400)
         
         verf_card = card_number.split('-')
         count = 0
