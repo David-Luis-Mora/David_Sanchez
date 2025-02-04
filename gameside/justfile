@@ -152,7 +152,7 @@ show-users:
     ' 
 
 # Load fixtures into database
-load-data: clean-data
+load-data: check-venv clean-data
     #!/usr/bin/env bash
     for model in auth users categories platforms games orders; do
         ./manage.py loaddata fixtures/$model.json
