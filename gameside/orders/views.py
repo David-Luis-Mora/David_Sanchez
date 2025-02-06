@@ -2,6 +2,7 @@ import re
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404
 import json
+import uuid
 
 from users.models import Token
 # from django.views.decorators.http import require_http_methods
@@ -19,19 +20,26 @@ logger = logging.getLogger(__name__)
 
 
 def add_order(request):
-    if request.method != "POST":
+    patron = r'Bearer \d{4}-\d{4}-\d{4}-\d{4}'
+    if request.method != "GET":
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     
     try:
-        data = json.loads(request.body)
-        token_key = data.get('token')
-        if not token_key:
+        token_key = request.headers.get('Authorization')
+        if not token_key or not token_key.startswith("Bearer"):
+            return JsonResponse({'error': 'Invalid authentication token'}, status=400)
+
+        token_key = token_key[7:]
+
+        try:
+            uuid.UUID(token_key)
+        except ValueError:
             return JsonResponse({'error': 'Invalid authentication token'}, status=400)
 
         try:
             token = Token.objects.get(key=token_key)
         except Token.DoesNotExist:
-            return JsonResponse({'error': 'Invalid token'}, status=401)
+            return JsonResponse({'error': 'Unregistered authentication token'}, status=401)
 
         order_new = Order.objects.create(user=token.user)
 
