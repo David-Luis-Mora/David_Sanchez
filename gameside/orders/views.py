@@ -58,19 +58,26 @@ def add_order(request):
 
 #Preguntar por el modelo Order.price en los test: test_order_detail
 def order_detail(request,pk):
-    if request.method != "POST":
+    patron = r'Bearer \d{4}-\d{4}-\d{4}-\d{4}'
+    if request.method != "GET":
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
     try:
-        data = json.loads(request.body)
-        token_key = data.get('token')
-        if not token_key:
+        token_key = request.headers.get('Authorization')
+        if not token_key or not token_key.startswith("Bearer"):
+            return JsonResponse({'error': 'Invalid authentication token'}, status=400)
+
+        token_key = token_key[7:]
+
+        try:
+            uuid.UUID(token_key)
+        except ValueError:
             return JsonResponse({'error': 'Invalid authentication token'}, status=400)
 
         try:
             token = Token.objects.get(key=token_key)
         except Token.DoesNotExist:
-            return JsonResponse({'error': 'Invalid token'}, status=401)
+            return JsonResponse({'error': 'Unregistered authentication token'}, status=401)
 
         try:
             order = Order.objects.get(pk=pk)
