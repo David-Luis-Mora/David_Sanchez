@@ -13,7 +13,7 @@ class GamesSerializer(BaseSerializer):
             'cover': self.build_url(instance.cover.url),
             'price': float(instance.price),
             'stock': instance.stock,
-            'released_at': instance.released_at,
+            'released_at': instance.released_at.isoformat(),
             'pegi': instance.get_pegi_display(),
             'category': {
                 'id': instance.category.pk,

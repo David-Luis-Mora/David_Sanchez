@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 def add_order(request):
     patron = r'Bearer \d{4}-\d{4}-\d{4}-\d{4}'
-    if request.method != "GET":
+    if request.method != "POST":
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     
     try:
@@ -98,23 +98,33 @@ def order_detail(request,pk):
         return JsonResponse({'error': str(e)}, status=500)
 
 # Comando para hacer testeo por terminal
-# curl -X POST http://127.0.0.1:8000/api/orders/26/games/ -H "Content-Type: application/json" -d '{"token": "a11ec6d0-e613-4626-afe6-fa42e150194d"}'
+# curl -X GET http://127.0.0.1:8000/api/orders/7/games/ -H "Content-Type: application/json" -H "Authorization: Bearer 9500b98c-ffc1-4fd2-931e-89863e5eeb1e"
 #El test de test_order_game_list mirar porque da error al comparar la lista de diccionario
 def order_game_list(request,pk):
-    if request.method != "POST":
+
+    patron = r'Bearer \d{4}-\d{4}-\d{4}-\d{4}'
+    if request.method != "GET":
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
     try:
-        data = json.loads(request.body)
-
-        token_key = data.get('token')
-        if not token_key:
+        token_key = request.headers.get('Authorization')
+        if not token_key  or not token_key.startswith("Bearer"):
             return JsonResponse({'error': 'Invalid authentication token'}, status=400)
+        
+        token_key = token_key[7:]
+
+        try:
+            uuid.UUID(token_key)
+        except ValueError:
+            return JsonResponse({'error': 'Invalid authentication token'}, status=400)
+
 
         try:
             token = Token.objects.get(key=token_key)
         except Token.DoesNotExist:
-            return JsonResponse({'error': 'Invalid token'}, status=401)
+            return JsonResponse({'error': 'Unregistered authentication token'}, status=401)
+        
+    
 
     
         try:
@@ -125,11 +135,10 @@ def order_game_list(request,pk):
         if order.user != token.user:
             return JsonResponse({'error': 'User is not the owner of requested order'}, status=403)
 
-        games = order.games.all()
-        serializer = GamesSerializer(games)
-        serialized_data = serializer.serialize_queryset(games)
-        print(serialized_data)
-        return JsonResponse({'games': serialized_data}, status=200)
+        # games = order.games.all()
+        serializer = OrdersSerializer(order)
+        serialized_data = serializer.serialize_instance(order)
+        return JsonResponse({'games': serialized_data['games']}, status=200)
        
 
     except json.JSONDecodeError:
