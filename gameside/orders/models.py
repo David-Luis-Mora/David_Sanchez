@@ -20,3 +20,7 @@ class Order(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='orders'
     )
     games = models.ManyToManyField('games.Game', related_name='orders')
+
+    @property
+    def price(self):
+        return sum(game.price for game in self.games.all())
