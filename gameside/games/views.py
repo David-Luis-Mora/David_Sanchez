@@ -6,6 +6,7 @@ from users.models import Token
 # from django.views.decorators.http import require_http_methods
 from .models import Game, Review
 from .serializers.games_serializers import GamesSerializer, ReviewsSerializer
+import uuid
 
 
 def game_list(request):
@@ -14,7 +15,14 @@ def game_list(request):
 
     else:
         try:
-            games_all = Game.objects.all()
+            if len(request.body) > 0:
+                data = json.loads(request.body)
+                category = data.get('category')
+                platform = data.get('platform')
+                games_all = Game.objects.all().exclude(category,platform)
+            else:
+                games_all = Game.objects.all()
+                
             serializer = GamesSerializer(games_all, request=request)
             return serializer.json_response()
         except Http404:
@@ -43,9 +51,12 @@ def review_list(request, slug):
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
     else:
-        game = Game.objects.get(slug=slug)
-        review = game.reviews.all()
-        game = Review.objects.all()
+        try:
+            game = Game.objects.get(slug=slug)
+            review = game.reviews.all()
+            game = Review.objects.all()
+        except Game.DoesNotExist:
+            return JsonResponse({'error': 'Game not found'}, status=404)
 
         serializer = ReviewsSerializer(review, request=request)
         return serializer.json_response()
@@ -57,42 +68,43 @@ def review_detail(request, pk):
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
     else:
-        review = Review.objects.get(pk=pk)
-        serializer = ReviewsSerializer(review, request=request)
-        return serializer.json_response()
+        try:
+            review = Review.objects.get(pk=pk)
+            serializer = ReviewsSerializer(review, request=request)
+            return serializer.json_response()
+        except Review.DoesNotExist:
+            return JsonResponse({'error': 'Review not found'},status=404)
 
 
 
-def add_review(request, slug):
+def add_review(request,slug):
     if request.method != "POST":
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
     try:
-        patron = 'Bearer \d{8}[A-Z]'
-        data = json.loads(request.body.decode('utf-8'))
-        token_key = data.get('token')
+        data = json.loads(request.body)
+        token_key = request.headers.get('Authorization')
         rating = data.get('rating')
         comment = data.get('comment')
 
-        if not isinstance(data, dict):
-            return JsonResponse({'error': 'Invalid JSON body'}, status=400)
 
-        if len(data) and not token_key and  not rating and not comment :
-            return JsonResponse({'error': 'Invalid JSON body'}, status=400)
-        
-        if not token_key:
+        if not token_key or not rating or not comment :
             return JsonResponse({'error': 'Missing required fields'}, status=400)
 
 
+        token_key = token_key[7:]
+
+        try:
+            uuid.UUID(token_key)
+        except ValueError:
+            return JsonResponse({'error': 'Invalid authentication token'}, status=400)
         
 
-        if not token_key or rating is None or comment is None:
-            return JsonResponse({'error': 'Invalid authentication token'}, status=400)
 
         try:
             token = Token.objects.get(key=token_key)
         except Token.DoesNotExist:
-            return JsonResponse({'error': 'Invalid token'}, status=401)
+            return JsonResponse({'error': 'Unregistered authentication token'}, status=401)
 
         game = Game.objects.get(slug=slug)
 

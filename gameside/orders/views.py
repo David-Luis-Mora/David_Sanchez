@@ -136,31 +136,39 @@ def order_game_list(request,pk):
             return JsonResponse({'error': 'User is not the owner of requested order'}, status=403)
 
         # games = order.games.all()
-        serializer = OrdersSerializer(order)
-        serialized_data = serializer.serialize_instance(order)
-        return JsonResponse({'games': serialized_data['games']}, status=200)
+        serializer = OrdersSerializer(order,request=request)
+        # serialized_data = serializer.serialize_instance(order)
+        return serializer.json_response()
        
 
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON body'}, status=400)
     except Exception as e:
+        logger.error(f"Error creating order: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)
     
 
 
-def add_game_to_order(request,pk,slug):
+def add_game_to_order(request,pk, slug):
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     try:
-        data = json.loads(request.body)
-        token_key = data.get('token')
-        if  not token_key:
+        token_key = request.headers.get('Authorization')
+        if  not token_key or not token_key.startswith("Bearer"):
             return JsonResponse({'error': 'Invalid authentication token'}, status=400)
-        
+    
+        token_key = token_key[7:]
+
+        try:
+            uuid.UUID(token_key)
+        except ValueError:
+            return JsonResponse({'error': 'Invalid authentication token'}, status=400)
+
+
         try:
             token = Token.objects.get(key=token_key)
         except Token.DoesNotExist:
-            return JsonResponse({'error': 'Invalid token'}, status=401)
+            return JsonResponse({'error': 'Unregistered authentication token'}, status=401)
         
         try:
             order = Order.objects.get(pk=pk)
@@ -184,7 +192,7 @@ def add_game_to_order(request,pk,slug):
         game.stock -= 1
         game.save()
 
-        return JsonResponse({'num-games-in-order': order.games.count()},status=200)
+        return JsonResponse({'num-games-in-order': order.games.count()})
 
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON body'}, status=400)
@@ -195,7 +203,7 @@ def add_game_to_order(request,pk,slug):
 
 
 def confirm_order(request, pk):
-    patron = 'Bearer \d{8}[A-Z]'
+    # patron = 'Bearer \d{8}[A-Z]'
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     try:
