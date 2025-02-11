@@ -23,37 +23,31 @@ def add_order(request):
     patron = r'Bearer \d{4}-\d{4}-\d{4}-\d{4}'
     if request.method != "POST":
         return JsonResponse({'error': 'Method not allowed'}, status=405)
-    
+
+
+    token_key = request.headers.get('Authorization')
+    if not token_key or not token_key.startswith("Bearer"):
+        return JsonResponse({'error': 'Invalid authentication token'}, status=400)
+
+    token_key = token_key[7:]
+
     try:
-        token_key = request.headers.get('Authorization')
-        if not token_key or not token_key.startswith("Bearer"):
-            return JsonResponse({'error': 'Invalid authentication token'}, status=400)
+        uuid.UUID(token_key)
+    except ValueError:
+        return JsonResponse({'error': 'Invalid authentication token'}, status=400)
 
-        token_key = token_key[7:]
+    try:
+        token = Token.objects.get(key=token_key)
+    except Token.DoesNotExist:
+        return JsonResponse({'error': 'Unregistered authentication token'}, status=401)
 
-        try:
-            uuid.UUID(token_key)
-        except ValueError:
-            return JsonResponse({'error': 'Invalid authentication token'}, status=400)
+    order_new = Order.objects.create(user=token.user)
 
-        try:
-            token = Token.objects.get(key=token_key)
-        except Token.DoesNotExist:
-            return JsonResponse({'error': 'Unregistered authentication token'}, status=401)
+    serializer = OrdersSerializer(order_new)
+    return JsonResponse({
+        'id': order_new.pk,
+    }, status=200)
 
-        order_new = Order.objects.create(user=token.user)
-
-        serializer = OrdersSerializer(order_new)
-        return JsonResponse({
-            'id': order_new.pk,
-            'order': serializer.serialize_instance(order_new)
-        }, status=200)
-
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid JSON body'}, status=400)
-    except Exception as e:
-        logger.error(f"Error creating order: {str(e)}")
-        return JsonResponse({'error': str(e)}, status=500)
 
 
 #Preguntar por el modelo Order.price en los test: test_order_detail
@@ -93,9 +87,6 @@ def order_detail(request,pk):
 
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON body'}, status=400)
-    except Exception as e:
-        logger.error(f"Error creating order: {str(e)}")
-        return JsonResponse({'error': str(e)}, status=500)
 
 # Comando para hacer testeo por terminal
 # curl -X GET http://127.0.0.1:8000/api/orders/7/games/ -H "Content-Type: application/json" -H "Authorization: Bearer 9500b98c-ffc1-4fd2-931e-89863e5eeb1e"

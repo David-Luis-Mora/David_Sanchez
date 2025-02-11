@@ -15,17 +15,17 @@ def auth(request):
         password = data.get('password')
         if not username or  not password:
             return JsonResponse({'error': 'Missing required fields'},status=400)
-        
 
-        user = authenticate(username=username, password=password)
+        user = authenticate(request,username=username, password=password)
+            
 
         if user:
-            token, created = Token.objects.get_or_create(user=user)
-            serialized_token = TokensSerializer(token)
+            request.user = user
+            token = Token.objects.get(user=user)
         else:
             return JsonResponse({'error': 'Invalid credentials'}, status=401)
         
-        return JsonResponse({'token': token.key,'user': serialized_token.serialize_instance(token)}, status=200)   
+        return JsonResponse({'token': token.key}, status=200)   
 
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON body'}, status=400)

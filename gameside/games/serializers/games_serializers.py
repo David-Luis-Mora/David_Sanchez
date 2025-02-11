@@ -38,9 +38,8 @@ class ReviewsSerializer(BaseSerializer):
             'id': instance.pk,
             'comment': instance.comment,
             'rating': instance.rating,
-            'game': GamesSerializer(instance.game).serialize(),
+            'game': GamesSerializer(instance.game,request=self.request).serialize(),
             'author': UserSerializer(instance.author).serialize(),
             'created_at': instance.created_at,
-            'updated_at': instance.updated_at,
-           
+            'updated_at': instance.updated_at,  
         }
