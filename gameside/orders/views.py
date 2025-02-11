@@ -270,6 +270,19 @@ def change_order_status(request, pk):
         status = data.get('status')
         # token_key = data.get('Authorization')
 
+        # if status == -1:
+        #     return JsonResponse(
+        #         {'error': 'Orders can only be confirmed/cancelled when initiated'}, status=400
+        #     )
+
+        # if status == 3:
+        #     return JsonResponse(
+        #         {'error': 'Orders can only be confirmed/cancelled when initiated'}, status=400
+        #     )
+
+        # if status < -1 and status > 3 and status == 0:
+        #     return JsonResponse({'error': 'Invalid status'}, status=400)
+
         # if token_key := re.search(patron,token_key):
         #     return JsonResponse({'error': 'Invalid authentication token'},status=400)
 
@@ -303,9 +316,6 @@ def change_order_status(request, pk):
             return JsonResponse(
                 {'error': 'Orders can only be confirmed/cancelled when initiated'}, status=400
             )
-
-        # if status != Order.Status.values:
-        #     return JsonResponse({'error': 'Invalid status'})
 
         order.status = status
         order.save()
