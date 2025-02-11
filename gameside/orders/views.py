@@ -5,6 +5,7 @@ import uuid
 from django.http import JsonResponse
 
 from games.models import Game
+from games.serializers.games_serializers import GamesSerializer
 from users.models import Token
 
 # from django.views.decorators.http import require_http_methods
@@ -119,9 +120,8 @@ def order_game_list(request, pk):
             return JsonResponse({'error': 'User is not the owner of requested order'}, status=403)
 
         # games = order.games.all()
-        serializer = OrdersSerializer(order, request=request)
-        # serialized_data = serializer.serialize_instance(order)
-        return serializer.json_response()
+        list_game = [GamesSerializer(j).serialize() for j in order.games.all()]
+        return JsonResponse(list_game, safe=False)
 
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON body'}, status=400)
@@ -130,13 +130,15 @@ def order_game_list(request, pk):
         return JsonResponse({'error': str(e)}, status=500)
 
 
-def add_game_to_order(request, pk, slug):
+def add_game_to_order(request, pk):
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     try:
+        data = json.loads(request.body)
+        game_slug = data.get('game-slug')
         token_key = request.headers.get('Authorization')
         if not token_key or not token_key.startswith('Bearer'):
-            return JsonResponse({'error': 'Invalid authentication token'}, status=400)
+            return JsonResponse({'error': 'Missing required fields'}, status=400)
 
         token_key = token_key[7:]
 
@@ -156,7 +158,7 @@ def add_game_to_order(request, pk, slug):
             return JsonResponse({'error': 'Order not found'}, status=404)
 
         try:
-            game = Game.objects.get(slug=slug)
+            game = Game.objects.get(slug=game_slug)
         except Game.DoesNotExist:
             return JsonResponse({'error': 'Game not found'}, status=404)
 
@@ -175,6 +177,7 @@ def add_game_to_order(request, pk, slug):
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON body'}, status=400)
     except Exception as e:
+        logger.error(e)
         return JsonResponse({'error': str(e)}, status=500)
 
 
