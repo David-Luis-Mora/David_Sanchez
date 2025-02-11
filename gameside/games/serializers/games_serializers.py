@@ -1,4 +1,7 @@
 from shared.serializers import BaseSerializer
+from categories.serializers.categories_serializers import CategoriesSerializer
+from platforms.serializers.platforms_serializers import PlatformSerializer
+from users.serializers.users_serializers import UserSerializer
 
 class GamesSerializer(BaseSerializer):
     def __init__(self, to_serialize, *, fields=[], request=None):
@@ -15,25 +18,9 @@ class GamesSerializer(BaseSerializer):
             'stock': instance.stock,
             'released_at': instance.released_at.isoformat(),
             'pegi': instance.get_pegi_display(),
-            'category': {
-                'id': instance.category.pk,
-                'name': instance.category.name,
-                'slug': instance.category.slug,
-                'description': instance.category.description,
-                'color': instance.category.color,
-            },
+            'category': CategoriesSerializer(instance.category).serialize(),
             'description': instance.description,
-             'platforms': [
-                {
-                    'id': platform.pk,
-                    'name': platform.name,
-                    'slug': platform.slug,
-                    'description': platform.description,
-                    'logo': self.build_url(platform.logo.url),
-                }
-                for platform in instance.platforms.all()
-            ],
-
+            'platforms': PlatformSerializer(instance.platforms.all(),request=self.request).serialize() 
         }
 
     def serialize_queryset(self, queryset) -> list:
@@ -51,43 +38,8 @@ class ReviewsSerializer(BaseSerializer):
             'id': instance.pk,
             'comment': instance.comment,
             'rating': instance.rating,
-            'game': {
-                'id': instance.game.pk,
-                'title': instance.game.title,
-                'slug': instance.game.slug,
-                'description': instance.game.description,
-                'cover': self.build_url(instance.game.cover.url),
-
-                'price': instance.game.price,
-                'stock': instance.game.stock,
-                'released_at': instance.game.released_at,
-                'pegi': instance.game.get_pegi_display(),
-                'category': {
-                    'id': instance.game.category.pk,
-                    'name': instance.game.category.name,
-                    'slug': instance.game.category.slug,
-                    'description': instance.game.category.description,
-                    'color': instance.game.category.color,
-                },
-                'platforms':[
-                    {
-                        'id': instance.platform.pk,
-                        'name': instance.platform.name,
-                        'slug': instance.platform.slug,
-                        'description': instance.platform.description,
-                        'logo': self.build_url(instance.platform.logo.url),
-                    }
-                    for platform in instance.game.platforms.all()
-                ] 
-
-            },
-            'author':{
-                'id': instance.author.id,
-                'username': instance.author.username,
-                'email': instance.author.email,
-                'first_name': instance.author.first_name,
-                'last_name': instance.author.last_name
-            },
+            'game': GamesSerializer(instance.game).serialize(),
+            'author': UserSerializer(instance.author).serialize(),
             'created_at': instance.created_at,
             'updated_at': instance.updated_at,
            
