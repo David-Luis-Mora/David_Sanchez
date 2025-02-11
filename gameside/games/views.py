@@ -13,19 +13,14 @@ def game_list(request):
     if request.method != 'GET':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
-    try:   
-        if len(request.body) > 0:
-            games_all = Game.objects.all()
-            data = json.loads(request.body)
-            category = data.get('category')
-            platform = data.get('platform')
-            if category:
-                category_
-                games_all.filter(category__slug=category)
-            if platform:
-                games_all.filter(platform in platform)
-        else:
-            games_all = Game.objects.all()
+    try:
+        games_all = Game.objects.all() 
+        category = request.GET.get('category')
+        platform = request.GET.get('platform')
+        if category:
+            games_all = games_all.filter(category__slug=category)
+        if platform:
+            games_all = games_all.filter(platforms__slug =platform)
         serializer = GamesSerializer(games_all, request=request)
         return serializer.json_response()
     except Http404:
@@ -56,7 +51,6 @@ def review_list(request, slug):
         try:
             game = Game.objects.get(slug=slug)
             review = game.reviews.all()
-            game = Review.objects.all()
         except Game.DoesNotExist:
             return JsonResponse({'error': 'Game not found'}, status=404)
 
