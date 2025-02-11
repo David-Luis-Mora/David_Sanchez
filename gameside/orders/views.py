@@ -181,24 +181,115 @@ def add_game_to_order(request, pk):
         return JsonResponse({'error': str(e)}, status=500)
 
 
-def confirm_order(request, pk):
-    # patron = 'Bearer \d{8}[A-Z]'
+# def confirm_order(request, pk):
+#     # patron = 'Bearer \d{8}[A-Z]'
+#     if request.method != 'POST':
+#         return JsonResponse({'error': 'Method not allowed'}, status=405)
+#     try:
+#         token_key = json.loads(request.headers.get('Authorization'))
+#         # token_key = data.get('Authorization')
+
+#         # if token_key := re.search(patron,token_key):
+#         #     return JsonResponse({'error': 'Invalid authentication token'},status=400)
+
+#         if not token_key:
+#             return JsonResponse({'error': 'Invalid authentication token'}, status=400)
+
+#         try:
+#             token = Token.objects.get(key=token_key)
+#         except Token.DoesNotExist:
+#             return JsonResponse({'error': 'Invalid token'}, status=401)
+
+#         try:
+#             order = Order.objects.get(pk=pk)
+#         except Order.DoesNotExist:
+#             return JsonResponse({'error': 'Order not found'}, status=404)
+
+#         if order.user != token.user:
+#             return JsonResponse({'error': 'User is not the owner of requested order'}, status=403)
+
+#         if order.status != 1:
+#             return JsonResponse(
+#                 {'error': 'Orders can only be confirmed when initiated'}, status=400
+#             )
+
+#         order.status = Order.Status.CONFIRMED
+#         order.save()
+
+#         return JsonResponse({'status': order.get_status_display()})
+
+#     except json.JSONDecodeError:
+#         return JsonResponse({'error': 'Invalid authentication token'}, status=400)
+
+
+# def cancel_order(request, pk):
+#     if request.method != 'POST':
+#         return JsonResponse({'error': 'Method not allowed'}, status=405)
+#     try:
+#         data = json.loads(request.body)
+#         token_key = data.get('token')
+#         if not token_key:
+#             return JsonResponse({'error': 'Invalid authentication token'}, status=400)
+
+#         try:
+#             token = Token.objects.get(key=token_key)
+#         except Token.DoesNotExist:
+#             return JsonResponse({'error': 'Invalid token'}, status=401)
+
+#         try:
+#             order = Order.objects.get(pk=pk)
+#         except Order.DoesNotExist:
+#             return JsonResponse({'error': 'Order not found'}, status=404)
+
+#         if order.user != token.user:
+#             return JsonResponse({'error': 'User is not the owner of requested order'}, status=403)
+
+#         if order.status != 1:
+#             return JsonResponse(
+#                 {'error': 'Orders can only be cancelled when initiated'}, status=400
+#             )
+
+#         for game in order.games.all():
+#             game.stock += 1
+#             game.save()
+#         order.status = Order.Status.CANCELLED
+#         order.save()
+
+#         return JsonResponse({'status': order.get_status_display()}, status=200)
+#     except json.JSONDecodeError:
+#         return JsonResponse({'error': 'Invalid JSON body'}, status=400)
+#     pass
+
+
+def change_order_status(request, pk):
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     try:
-        token_key = json.loads(request.headers.get('Authorization'))
+        token_key = request.headers.get('Authorization')
+        data = json.loads(request.body)
+        status = data.get('status')
         # token_key = data.get('Authorization')
 
         # if token_key := re.search(patron,token_key):
         #     return JsonResponse({'error': 'Invalid authentication token'},status=400)
 
-        if not token_key:
+        if not token_key or not status:
+            return JsonResponse({'error': 'Missing required fields'}, status=400)
+
+        if not token_key.startswith('Bearer'):
+            return JsonResponse({'error': 'Invalid authentication token'})
+
+        token_key = token_key[7:]
+
+        try:
+            uuid.UUID(token_key)
+        except ValueError:
             return JsonResponse({'error': 'Invalid authentication token'}, status=400)
 
         try:
             token = Token.objects.get(key=token_key)
         except Token.DoesNotExist:
-            return JsonResponse({'error': 'Invalid token'}, status=401)
+            return JsonResponse({'error': 'Unregistered authentication token'}, status=401)
 
         try:
             order = Order.objects.get(pk=pk)
@@ -210,52 +301,17 @@ def confirm_order(request, pk):
 
         if order.status != 1:
             return JsonResponse(
-                {'error': 'Orders can only be confirmed when initiated'}, status=400
+                {'error': 'Orders can only be confirmed/cancelled when initiated'}, status=400
             )
 
-        order.status = Order.Status.CONFIRMED
-        order.save()
+        # if status != Order.Status.values:
+        #     return JsonResponse({'error': 'Invalid status'})
 
-        return JsonResponse({'status': order.get_status_display()})
-
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid authentication token'}, status=400)
-
-
-def cancel_order(request, pk):
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Method not allowed'}, status=405)
-    try:
-        data = json.loads(request.body)
-        token_key = data.get('token')
-        if not token_key:
-            return JsonResponse({'error': 'Invalid authentication token'}, status=400)
-
-        try:
-            token = Token.objects.get(key=token_key)
-        except Token.DoesNotExist:
-            return JsonResponse({'error': 'Invalid token'}, status=401)
-
-        try:
-            order = Order.objects.get(pk=pk)
-        except Order.DoesNotExist:
-            return JsonResponse({'error': 'Order not found'}, status=404)
-
-        if order.user != token.user:
-            return JsonResponse({'error': 'User is not the owner of requested order'}, status=403)
-
-        if order.status != 1:
-            return JsonResponse(
-                {'error': 'Orders can only be cancelled when initiated'}, status=400
-            )
-
-        for game in order.games.all():
-            game.stock += 1
-            game.save()
-        order.status = Order.Status.CANCELLED
+        order.status = status
         order.save()
 
         return JsonResponse({'status': order.get_status_display()}, status=200)
+
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON body'}, status=400)
     pass
@@ -266,12 +322,22 @@ def pay_order(request, pk):
         return JsonResponse({'error': 'Method not allowed'}, status=405)
     try:
         data = json.loads(request.body)
-        token_key = data.get('token')
+        token_key = request.headers.get('Authorization')
         card_number = data.get('card-number')
         exp_date = data.get('exp-date')
         cvc = data.get('cvc')
 
         if not token_key or not card_number or not exp_date or not cvc:
+            return JsonResponse({'error': 'Missing required fields'}, status=400)
+
+        if not token_key.startswith('Bearer'):
+            return JsonResponse({'error': ''}, status=404)
+
+        token_key = token_key[7:]
+
+        try:
+            uuid.UUID(token_key)
+        except ValueError:
             return JsonResponse({'error': 'Invalid authentication token'}, status=400)
 
         verf_card = card_number.split('-')
@@ -295,7 +361,7 @@ def pay_order(request, pk):
         try:
             token = Token.objects.get(key=token_key)
         except Token.DoesNotExist:
-            return JsonResponse({'error': 'Invalid token'}, status=401)
+            return JsonResponse({'error': 'Unregistered authentication token'}, status=401)
 
         try:
             order = Order.objects.get(pk=pk)
@@ -306,7 +372,7 @@ def pay_order(request, pk):
             return JsonResponse({'error': 'User is not the owner of requested order'}, status=403)
 
         if order.status != 2:
-            return JsonResponse({'error': 'Orders can only be payed when confirmed'}, status=400)
+            return JsonResponse({'error': 'Orders can only be paid when confirmed'}, status=400)
 
         order.status = Order.Status.PAID
         order.save()
