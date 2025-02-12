@@ -268,6 +268,16 @@ def change_order_status(request, pk):
         token_key = request.headers.get('Authorization')
         data = json.loads(request.body)
         status = data.get('status')
+
+        if not token_key or not status:
+            return JsonResponse({'error': 'Missing required fields'}, status=400)
+
+        VALID_STATUSES = {Order.Status.CANCELLED, Order.Status.CONFIRMED}
+        
+        if status not in VALID_STATUSES:
+            return JsonResponse({'error': 'Invalid status'}, status=400)
+
+
         # token_key = data.get('Authorization')
 
         # if status == -1:
@@ -286,8 +296,7 @@ def change_order_status(request, pk):
         # if token_key := re.search(patron,token_key):
         #     return JsonResponse({'error': 'Invalid authentication token'},status=400)
 
-        if not token_key or not status:
-            return JsonResponse({'error': 'Missing required fields'}, status=400)
+    
 
         if not token_key.startswith('Bearer'):
             return JsonResponse({'error': 'Invalid authentication token'})
