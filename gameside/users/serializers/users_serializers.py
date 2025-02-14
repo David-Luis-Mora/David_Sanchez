@@ -1,5 +1,6 @@
 from shared.serializers import BaseSerializer
 
+
 class TokensSerializer(BaseSerializer):
     def __init__(self, to_serialize, *, fields=[], request=None):
         super().__init__(to_serialize, fields=fields, request=request)
@@ -12,6 +13,7 @@ class TokensSerializer(BaseSerializer):
             'created_at': instance.created_at,
         }
 
+
 class UserSerializer(BaseSerializer):
     def __init__(self, to_serialize, *, fields=[], request=None):
         super().__init__(to_serialize, fields=fields, request=request)
@@ -23,5 +25,4 @@ class UserSerializer(BaseSerializer):
             'email': instance.email,
             'first_name': instance.first_name,
             'last_name': instance.last_name,
-            'email': instance.email
         }

@@ -1,33 +1,37 @@
-from django.http import JsonResponse
 import json
-from users.models import Token
+
+from django.http import JsonResponse
+
+from shared.decorators import require_get, require_post, validate_json
+from users.decorators import auth_required
+
 from .models import Game, Review
 from .serializers.games_serializers import GamesSerializer, ReviewsSerializer
-import uuid
-from users.decorators import auth_required
-from shared.decorators import require_get, require_post, validate_json
+
 
 @require_get
 def game_list(request):
-    games_all = Game.objects.all() 
+    games_all = Game.objects.all()
     category = request.GET.get('category')
     platform = request.GET.get('platform')
     if category:
         games_all = games_all.filter(category__slug=category)
     if platform:
-        games_all = games_all.filter(platforms__slug =platform)
+        games_all = games_all.filter(platforms__slug=platform)
     serializer = GamesSerializer(games_all, request=request)
     return serializer.json_response()
 
+
 @require_get
-def game_detail(request,slug):
+def game_detail(request, slug):
     try:
         game = Game.objects.get(slug=slug)
         serializer = GamesSerializer(game, request=request)
         return serializer.json_response()
     except Game.DoesNotExist:
         return JsonResponse({'error': 'Game not found'}, status=404)
-    
+
+
 @require_get
 def review_list(request, slug):
     try:
@@ -39,6 +43,7 @@ def review_list(request, slug):
     serializer = ReviewsSerializer(review, request=request)
     return serializer.json_response()
 
+
 @require_get
 def review_detail(request, pk):
     try:
@@ -46,25 +51,21 @@ def review_detail(request, pk):
         serializer = ReviewsSerializer(review, request=request)
         return serializer.json_response()
     except Review.DoesNotExist:
-        return JsonResponse({'error': 'Review not found'},status=404)
+        return JsonResponse({'error': 'Review not found'}, status=404)
+
 
 @require_post
 @validate_json(required_fields=['rating', 'comment'])
 @auth_required
-def add_review(request,slug):
+def add_review(request, slug):
     try:
-        data = json.loads(request.body)
-        token_key = request.headers.get('Authorization')
         rating = request.json_data['rating']
         comment = request.json_data['comment']
         game = Game.objects.get(slug=slug)
         if not (1 <= rating <= 5):
             return JsonResponse({'error': 'Rating is out of range'}, status=400)
         review = Review.objects.create(
-            game=game,
-            author=request.user,
-            rating=rating,
-            comment=comment
+            game=game, author=request.user, rating=rating, comment=comment
         )
         return JsonResponse({'id': review.pk}, status=200)
     except Game.DoesNotExist:
