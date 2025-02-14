@@ -1,31 +1,22 @@
-from django.http import Http404, JsonResponse
-from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
 import json
 from django.contrib.auth import authenticate
-
+from shared.decorators import require_get, require_post, validate_json
 from .models import Token
-from .serializers.users_serializers import TokensSerializer
 
+@require_post
+@validate_json(required_fields=['username','password'])
 def auth(request):
-    if request.method != 'POST':
-        return JsonResponse({'error': 'Method not allowed'}, status=405)
     try:
         data = json.loads(request.body)
-        username = data.get('username')
-        password = data.get('password')
-        if not username or  not password:
-            return JsonResponse({'error': 'Missing required fields'},status=400)
-
+        username =request.json_data['username']
+        password =request.json_data['password']
         user = authenticate(request,username=username, password=password)
-            
-
         if user:
             request.user = user
             token = Token.objects.get(user=user)
         else:
             return JsonResponse({'error': 'Invalid credentials'}, status=401)
-        
-        return JsonResponse({'token': token.key}, status=200)   
-
+        return JsonResponse({'token': token.key}, status=200)
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON body'}, status=400)

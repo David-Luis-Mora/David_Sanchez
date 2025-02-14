@@ -1,13 +1,10 @@
 import json
 import logging
 import uuid
-
 from django.http import JsonResponse
-
 from games.models import Game
 from games.serializers.games_serializers import GamesSerializer
 from users.models import Token
-
 from .models import Order
 from .serializers.orders_serializers import OrdersSerializer
 from users.decorators import auth_required
@@ -25,19 +22,14 @@ def add_order(request):
 @auth_required
 @validate_json(required_fields=[])
 def order_detail(request, pk):
-    patron = r'Bearer \d{4}-\d{4}-\d{4}-\d{4}'
-    if request.method != 'GET':
-        return JsonResponse({'error': 'Method not allowed'}, status=405)
     try:
         order = Order.objects.get(pk=pk)
     except Order.DoesNotExist:
         return JsonResponse({'error': 'Order not found'}, status=404)
-
     if order.user != request.user:
         return JsonResponse({'error': 'User is not the owner of requested order'}, status=403)
     serializer = OrdersSerializer(order)
     serialized_data = serializer.serialize_instance(order)
-
     return JsonResponse(serialized_data, status=200)
 
 @require_get
@@ -97,7 +89,6 @@ def change_order_status(request, pk):
     order.save()
     return JsonResponse({'status': order.get_status_display()}, status=200)
 
-
 @require_post
 @validate_json(required_fields=['card-number','exp-date','cvc'])
 @auth_required
@@ -114,7 +105,6 @@ def pay_order(request, pk):
         return JsonResponse({'error': 'Order not found'}, status=404)
     if order.user != request.user:
         return JsonResponse({'error': 'User is not the owner of requested order'}, status=403)
-
     if order.status != 2:
         return JsonResponse({'error': 'Orders can only be paid when confirmed'}, status=400)
     order.status = Order.Status.PAID

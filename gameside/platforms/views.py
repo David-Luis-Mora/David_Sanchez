@@ -1,33 +1,22 @@
 # Create your views here.
 
-from django.http import Http404, JsonResponse
-from django.shortcuts import get_object_or_404
-
-# from django.views.decorators.http import require_http_methods
+from django.http import JsonResponse
 from .models import Platform
 from .serializers.platforms_serializers import PlatformSerializer
+from shared.decorators import require_get, require_post
 
-
-# @require_http_methods(['GET'])
+@require_get
 def platform_list(request):
-    if request.method != 'GET':
-        return JsonResponse({'error': 'Method not allowed'}, status=405)
-
-    else:
-        platforms_all = Platform.objects.all()
-        serializer = PlatformSerializer(platforms_all, request=request)
-        return serializer.json_response()
-
+    platforms_all = Platform.objects.all()
+    serializer = PlatformSerializer(platforms_all, request=request)
+    return serializer.json_response()
+    
+@require_get
 def platform_detail(request, slug):
-    if request.method != 'GET':
-        return JsonResponse({'error': 'Method not allowed'}, status=405)
-
-    else:
-        try:
-            platform = get_object_or_404(Platform, slug=slug)
-            serializer = PlatformSerializer(platform, request=request)
-            return serializer.json_response()
-
-        except Http404:
-            return JsonResponse({'error': 'Platform not found'}, status=404)
+    try:
+        platform = Platform.objects.get(slug=slug)
+    except Platform.DoesNotExist:
+        return JsonResponse({'error': 'Platform not found'}, status=404)
+    serializer = PlatformSerializer(platform, request=request)
+    return serializer.json_response()
         
