@@ -1,5 +1,4 @@
 import json
-import logging
 import uuid
 from django.http import JsonResponse
 from games.models import Game

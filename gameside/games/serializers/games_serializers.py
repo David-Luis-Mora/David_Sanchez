@@ -6,9 +6,7 @@ from users.serializers.users_serializers import UserSerializer
 class GamesSerializer(BaseSerializer):
     def __init__(self, to_serialize, *, fields=[], request=None):
         super().__init__(to_serialize, fields=fields, request=request)
-
     def serialize_instance(self, instance) -> dict:
-
         return {
             'id': instance.pk,
             'title': instance.title,
@@ -22,12 +20,7 @@ class GamesSerializer(BaseSerializer):
             'description': instance.description,
             'platforms': PlatformSerializer(instance.platforms.all(),request=self.request).serialize() 
         }
-
-    def serialize_queryset(self, queryset) -> list:
-        return [self.serialize_instance(game) for game in queryset]
-
-
-
+    
 class ReviewsSerializer(BaseSerializer):
     def __init__(self, to_serialize, *, fields=[], request=None):
         super().__init__(to_serialize, fields=fields, request=request)

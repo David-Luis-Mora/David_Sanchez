@@ -6,8 +6,6 @@ class OrdersSerializer(BaseSerializer):
         super().__init__(to_serialize, fields=fields, request=request)
 
     def serialize_instance(self, instance) -> dict:
-
-        price = sum(game.price for game in instance.games.all())
         return {
             'id': instance.pk,
             'status': instance.get_status_display(),
@@ -16,5 +14,5 @@ class OrdersSerializer(BaseSerializer):
             'key': None,
             'games': GamesSerializer(instance.games.all(), request=self.request).serialize(),
             'user': UserSerializer(instance.user).serialize(),
-            'price': price
+            'price': float(instance.price),
         }

@@ -1,9 +1,6 @@
 from django.contrib import admin
-
 from .models import Game, Review
 
-
-# Register your models here.
 @admin.register(Game)
 class GameAdmin(admin.ModelAdmin):
     list_display = [
@@ -17,8 +14,7 @@ class GameAdmin(admin.ModelAdmin):
         'pegi',
         'category',
     ]
-
-
+    
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
     list_display = [

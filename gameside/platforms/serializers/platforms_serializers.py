@@ -1,6 +1,5 @@
 from shared.serializers import BaseSerializer
 
-
 class PlatformSerializer(BaseSerializer):
     def __init__(self, to_serialize, *, fields=[], request=None):
         super().__init__(to_serialize, fields=fields, request=request)

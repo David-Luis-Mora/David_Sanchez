@@ -1,5 +1,3 @@
-# Create your views here.
-
 from django.http import JsonResponse
 from .models import Platform
 from .serializers.platforms_serializers import PlatformSerializer

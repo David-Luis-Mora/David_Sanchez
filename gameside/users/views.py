@@ -7,16 +7,12 @@ from .models import Token
 @require_post
 @validate_json(required_fields=['username','password'])
 def auth(request):
-    try:
-        data = json.loads(request.body)
-        username =request.json_data['username']
-        password =request.json_data['password']
-        user = authenticate(request,username=username, password=password)
-        if user:
-            request.user = user
-            token = Token.objects.get(user=user)
-        else:
-            return JsonResponse({'error': 'Invalid credentials'}, status=401)
-        return JsonResponse({'token': token.key}, status=200)
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Invalid JSON body'}, status=400)
+    username =request.json_data['username']
+    password =request.json_data['password']
+    user = authenticate(request,username=username, password=password)
+    if user:
+        request.user = user
+        token = Token.objects.get(user=user)
+    else:
+        return JsonResponse({'error': 'Invalid credentials'}, status=401)
+    return JsonResponse({'token': token.key}, status=200)

@@ -2,10 +2,6 @@ from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 
-# from django.conf import settings
-
-
-# Create your models here.
 class Game(models.Model):
     class Pegi(models.IntegerChoices):
         PEGI3 = 3
@@ -13,7 +9,6 @@ class Game(models.Model):
         PEGI12 = 12
         PEGI16 = 16
         PEGI18 = 18
-
     title = models.CharField(max_length=255, unique=True)
     slug = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True)
@@ -24,7 +19,6 @@ class Game(models.Model):
     pegi = models.IntegerField(
         choices=Pegi,
     )
-
     category = models.ForeignKey(
         'categories.Category',
         related_name='games',
@@ -35,7 +29,7 @@ class Game(models.Model):
         'platforms.Platform',
         related_name='games',
     )
-
+    
 class Review(models.Model):
     comment = models.TextField()
     rating = models.PositiveSmallIntegerField(

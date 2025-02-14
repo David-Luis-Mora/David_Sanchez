@@ -15,7 +15,6 @@ def require_post(view_func):
         return view_func(request, *args, **kwargs)
     return wrapper
 
-
 def validate_json(required_fields=None):
     def wrapper(view_func):
         def inner(request, *args, **kwargs):
@@ -31,7 +30,6 @@ def validate_json(required_fields=None):
                     return JsonResponse({'error': f'Missing required fields'}, status=400)
             request.json_data = data
             return view_func(request, *args, **kwargs)
-
         return inner
     return wrapper
 

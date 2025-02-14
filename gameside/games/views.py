@@ -1,4 +1,4 @@
-from django.http import Http404, JsonResponse
+from django.http import JsonResponse
 import json
 from users.models import Token
 from .models import Game, Review
@@ -27,8 +27,7 @@ def game_detail(request,slug):
         return serializer.json_response()
     except Game.DoesNotExist:
         return JsonResponse({'error': 'Game not found'}, status=404)
-       
-
+    
 @require_get
 def review_list(request, slug):
     try:
@@ -39,7 +38,7 @@ def review_list(request, slug):
 
     serializer = ReviewsSerializer(review, request=request)
     return serializer.json_response()
-    
+
 @require_get
 def review_detail(request, pk):
     try:

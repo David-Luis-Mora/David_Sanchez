@@ -8,7 +8,6 @@ def validate_card_data(card_number: str, exp_date: str, cvc: str):
         return {'error': 'Invalid CVC'}
     if not re.fullmatch(r'\d{2}/\d{4}', exp_date):
         return {'error': 'Invalid expiration date'}
-    
     month, year = map(int, exp_date.split('/'))
     if month < 1 or month > 12:
         return {'error': 'Invalid expiration date'}

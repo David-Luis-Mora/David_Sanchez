@@ -3,8 +3,6 @@ from abc import ABC
 from typing import Iterable
 
 from django.http import HttpRequest, JsonResponse
-
-
 class BaseSerializer(ABC):
     def __init__(
         self,
@@ -19,8 +17,7 @@ class BaseSerializer(ABC):
 
     def build_url(self, path: str) -> str:
         return self.request.build_absolute_uri(path) if self.request else path
-
-    # To be implemented by subclasses
+    
     def serialize_instance(self, instance: object) -> dict:
         raise NotImplementedError
 
