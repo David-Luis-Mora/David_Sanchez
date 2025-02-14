@@ -1,9 +1,6 @@
 from django.http import Http404, JsonResponse
-from django.shortcuts import get_object_or_404
 import json
-
 from users.models import Token
-# from django.views.decorators.http import require_http_methods
 from .models import Game, Review
 from .serializers.games_serializers import GamesSerializer, ReviewsSerializer
 import uuid
@@ -43,7 +40,6 @@ def review_list(request, slug):
     serializer = ReviewsSerializer(review, request=request)
     return serializer.json_response()
     
-
 @require_get
 def review_detail(request, pk):
     try:
@@ -53,42 +49,18 @@ def review_detail(request, pk):
     except Review.DoesNotExist:
         return JsonResponse({'error': 'Review not found'},status=404)
 
-
 @require_post
-@validate_json(required_fields=['rating', 'comment'])  # Verificación de campos requeridos en el decorador
+@validate_json(required_fields=['rating', 'comment'])
 @auth_required
 def add_review(request,slug):
-
     try:
         data = json.loads(request.body)
         token_key = request.headers.get('Authorization')
-        rating = data.get('rating')
-        comment = data.get('comment')
-
-
-        if not token_key or not rating or not comment :
-            return JsonResponse({'error': 'Missing required fields'}, status=400)
-
-
-        # token_key = token_key[7:]
-
-        # try:
-        #     uuid.UUID(token_key)
-        # except ValueError:
-        #     return JsonResponse({'error': 'Invalid authentication token'}, status=400)
-        
-
-
-        # try:
-        #     token = Token.objects.get(key=token_key)
-        # except Token.DoesNotExist:
-        #     return JsonResponse({'error': 'Unregistered authentication token'}, status=401)
-
+        rating = request.json_data['rating']
+        comment = request.json_data['comment']
         game = Game.objects.get(slug=slug)
-
         if not (1 <= rating <= 5):
             return JsonResponse({'error': 'Rating is out of range'}, status=400)
-
         review = Review.objects.create(
             game=game,
             author=request.user,
@@ -96,7 +68,6 @@ def add_review(request,slug):
             comment=comment
         )
         return JsonResponse({'id': review.pk}, status=200)
-
     except Game.DoesNotExist:
         return JsonResponse({'error': 'Game not found'}, status=404)
     except json.JSONDecodeError:

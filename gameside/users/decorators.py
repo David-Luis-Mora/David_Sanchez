@@ -1,4 +1,5 @@
 import re
+import uuid
 
 from django.http import JsonResponse
 
@@ -12,15 +13,18 @@ def auth_required(func):
     )
 
     def wrapper(request, *args, **kwargs):
-        try:
-            data = json.loads(request.body)
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON body'}, status=400)
+        # try:
+        #     data = json.loads(request.body)
+        # except json.JSONDecodeError:
+        #     return JsonResponse({'error': 'Invalid JSON body'}, status=400)
         
         # if not data:
         #     return JsonResponse({'error': 'Missing required fields'}, status=400)
         if not (m := re.fullmatch(BEARER_TOKEN_REGEX, request.headers.get('Authorization', ''))):
             return JsonResponse({'error': 'Invalid authentication token'}, status=400)
+            
+        
+
         try:
             token = Token.objects.get(key=m['token'])
         except Token.DoesNotExist:
