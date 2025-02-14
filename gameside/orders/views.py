@@ -11,32 +11,35 @@ from users.models import Token
 # from django.views.decorators.http import require_http_methods
 from .models import Order
 from .serializers.orders_serializers import OrdersSerializer
+from users.decorators import auth_required
+from shared.decorators import require_get, require_post
+
 
 logger = logging.getLogger(__name__)
 
-
+@require_post
+@auth_required
 def add_order(request):
-    patron = r'Bearer \d{4}-\d{4}-\d{4}-\d{4}'
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
-    token_key = request.headers.get('Authorization')
-    if not token_key or not token_key.startswith('Bearer'):
-        return JsonResponse({'error': 'Invalid authentication token'}, status=400)
+    # token_key = request.headers.get('Authorization')
+    # if not token_key or not token_key.startswith('Bearer'):
+    #     return JsonResponse({'error': 'Invalid authentication token'}, status=400)
 
-    token_key = token_key[7:]
+    # token_key = token_key[7:]
 
-    try:
-        uuid.UUID(token_key)
-    except ValueError:
-        return JsonResponse({'error': 'Invalid authentication token'}, status=400)
+    # try:
+    #     uuid.UUID(token_key)
+    # except ValueError:
+    #     return JsonResponse({'error': 'Invalid authentication token'}, status=400)
 
-    try:
-        token = Token.objects.get(key=token_key)
-    except Token.DoesNotExist:
-        return JsonResponse({'error': 'Unregistered authentication token'}, status=401)
+    # try:
+    #     token = Token.objects.get(key=request.user.id)
+    # except Token.DoesNotExist:
+    #     return JsonResponse({'error': 'Unregistered authentication token'}, status=401)
 
-    order_new = Order.objects.create(user=token.user)
+    order_new = Order.objects.create(user=request.user)
 
     serializer = OrdersSerializer(order_new)
     return JsonResponse(
